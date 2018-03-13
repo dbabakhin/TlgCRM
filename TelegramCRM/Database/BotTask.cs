@@ -51,6 +51,12 @@ namespace TelegramCRM.Database
         {
             get; set;
         }
+
+        [Association("File-Task")]
+        public XPCollection<BotFile> Files
+        {
+            get => GetCollection<BotFile>(nameof(Files));
+        }
     }
 
 

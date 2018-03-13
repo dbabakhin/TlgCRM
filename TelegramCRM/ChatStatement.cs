@@ -26,6 +26,6 @@ namespace TelegramCRM
 
     public enum ChatStatemtns
     {
-        NextMessageIsTaksName, NextMessageIsTaskDesc, NextMessageIsTaskSDate, NextMessageIsTaskEDate, NextMessageIdTaskPriorirty, NextMessageIsTaskExecutorId, NextMessageIsTaskStatus
+        NextMessageIsFiles,NextMessageIsTaksName, NextMessageIsTaskDesc, NextMessageIsTaskSDate, NextMessageIsTaskEDate, NextMessageIdTaskPriorirty, NextMessageIsTaskExecutorId, NextMessageIsTaskStatus
     }
 }

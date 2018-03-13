@@ -34,7 +34,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DevExpress.Data.v17.1, Version=17.1.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a" />
+    <Reference Include="DevExpress.Data.v17.1, Version=17.1.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a">
+      <Private>True</Private>
+    </Reference>
     <Reference Include="DevExpress.Xpo.v17.1, Version=17.1.5.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Windows\Microsoft.NET\assembly\GAC_MSIL\DevExpress.Xpo.v17.1\v4.0_17.1.5.0__b88d1754d700e49a\DevExpress.Xpo.v17.1.dll</HintPath>
@@ -75,6 +77,7 @@
     <Compile Include="CallbackEventArgs.cs" />
     <Compile Include="ChatStatement.cs" />
     <Compile Include="CommandProcessor.cs" />
+    <Compile Include="Database\BotFile.cs" />
     <Compile Include="Database\BotTask.cs" />
     <Compile Include="Database\BotUser.cs" />
     <Compile Include="PermissionSystem.cs" />

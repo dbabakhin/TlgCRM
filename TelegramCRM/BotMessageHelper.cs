@@ -52,6 +52,14 @@ namespace TelegramCRM
             ikbList.Add(ikb.ToArray());
             ikb.Clear();
 
+            ikb.Add(new InlineKeyboardCallbackButton("Добавить файлы", taskId.ToString() + "," + nameof(CallbackActions.addfiles)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
+
+            ikb.Add(new InlineKeyboardCallbackButton("Смотреть файлы", taskId.ToString() + "," + nameof(CallbackActions.showfiles)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
+
             return ikbList.ToArray();
         }
 
@@ -65,6 +73,9 @@ namespace TelegramCRM
             ikbList.Add(ikb.ToArray());
             ikb.Clear();
 
+            ikb.Add(new InlineKeyboardCallbackButton("Смотреть файлы", taskId.ToString() + "," + nameof(CallbackActions.showfiles)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
 
             return ikbList.ToArray();
         }

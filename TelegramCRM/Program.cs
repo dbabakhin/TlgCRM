@@ -15,6 +15,16 @@ namespace TelegramCRM
 {
     class Program
     {
+        public enum CallbackActions
+        {
+            showfiles, addfiles, taskdetailviewall, taskdetailviewstat, taskdetailviewdeny, deletetask, edittask, edittaskname, edittasksdate, edittaskedate, edittaskexecutor, edittaskdesc, edittaskstat, edittaskpriority, statenew, stateread, statework, statedone, statecorect, statekill,
+            tasklistview
+        }
+
+        public enum BotCommandList
+        {
+            start, tasktome, ntask, mytask, killmytask, newuser, allusers, killuser, blockuser, alltask, exptome, expmy, help, setadm, setuser
+        }
 
         private static readonly string apiKey = "559244515:AAEKvJKLQ-jBkilGwGNU7EJmKlQ2f43xOzY";
         private static readonly Telegram.Bot.TelegramBotClient Bot = new Telegram.Bot.TelegramBotClient(apiKey);
@@ -24,34 +34,11 @@ namespace TelegramCRM
         {
             var connectionString = SQLiteConnectionProvider.GetConnectionString("botdatabase");
             XpoDefault.DataLayer = XpoDefault.GetDataLayer(connectionString, AutoCreateOption.DatabaseAndSchema);
-
-            Session session = new Session();
-            var adm = from user in session.Query<BotUser>()
-                      where user.UserName == "dbabakhin"
-                      select user;
-            if (adm.FirstOrDefault() == null)
-            {
-                BotUser admUser = new BotUser(session);
-                admUser.UserName = "dbabakhin";
-                admUser.FirstName = "Danil";
-                admUser.LastName = "Babakhin";
-                admUser.IsAdministrative = true;
-                admUser.Save();
-            }
-            else
-            {
-                adm.FirstOrDefault().IsAdministrative = true;
-                adm.FirstOrDefault().Save();
-            }
-
             Bot.OnMessage += Bot_OnMessage;
-            Bot.OnInlineQuery += Bot_OnInlineQuery;
             Bot.OnCallbackQuery += Bot_OnCallbackQuery;
-
             Bot.StartReceiving();
             Console.WriteLine("Bot work");
             Console.ReadLine();
-
             Bot.StopReceiving();
             Console.WriteLine("Bot stopped");
             Console.ReadLine();
@@ -188,59 +175,20 @@ namespace TelegramCRM
                         await Bot.SendTextMessageAsync(chatId, BotMessageHelper.GetTaskTextDetailView(task), Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditStateDeleteDetailViewButtonsState(args.DataId)));
                         break;
                     }
+                case nameof(CallbackActions.addfiles):
+                    {
+                        await Bot.SendTextMessageAsync(chatId, "Отправьте один файл");
+                        AddChatStatement(chatId, ChatStatemtns.NextMessageIsFiles, args.DataId);
+                        break;
+                    }
+                case nameof(CallbackActions.showfiles):
+                    {
+                        ExecuteActionShowFiles(args.DataId, chatId);
+                        break;
+                    }
             }
         }
 
-        private static void AddChatStatement(long chatId, ChatStatemtns statement, int dataId)
-        {
-            ChatStatements.Add(new ChatStatement() { ChatId = chatId, Statament = statement, BotTaskId = dataId });
-        }
-
-
-
-
-        private async static void ChangeTaskState(int taskId, long chatId, string stateName)
-        {
-            Session s = new Session();
-            BotTask task = s.GetObjectByKey<BotTask>(taskId);
-            if (task != null)
-            {
-                task.Status = stateName;
-                task.Save();
-                await Bot.SendTextMessageAsync(chatId, "Статус задачи изменен");
-            }
-            else
-            {
-                await Bot.SendTextMessageAsync(chatId, "Не удалось поменять статус");
-            }
-        }
-
-        private async static void ExecuteActionEditTask(CallbackEventArgs args, long chatId)
-        {
-            await Bot.SendTextMessageAsync(chatId, "Выберите что хотите изменить", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditDetailViewButtons(args.DataId)));
-        }
-
-        private static void ExecuteActionDeleteTask(CallbackEventArgs args)
-        {
-            Session s = new Session();
-            s.Delete(s.GetObjectByKey<BotTask>(args.DataId));
-        }
-
-        private static void Bot_OnInlineQuery(object sender, InlineQueryEventArgs e)
-        {
-            var a = e;
-        }
-
-        public enum CallbackActions
-        {
-            taskdetailviewall, taskdetailviewstat, taskdetailviewdeny, deletetask, edittask, edittaskname, edittasksdate, edittaskedate, edittaskexecutor, edittaskdesc, edittaskstat, edittaskpriority, statenew, stateread, statework, statedone, statecorect, statekill,
-            tasklistview
-        }
-
-        public enum BotCommandList
-        {
-            start, tasktome, ntask, mytask, killmytask, newuser, allusers, killuser, blockuser, alltask, exptome, expmy, help, setadm, setuser
-        }
 
         private static async void Bot_OnMessage(object sender, Telegram.Bot.Args.MessageEventArgs e)
         {
@@ -297,6 +245,29 @@ namespace TelegramCRM
                         case ChatStatemtns.NextMessageIsTaskStatus:
                             await Bot.SendTextMessageAsync(chatId, $"Стутс задачи изменен");
                             break;
+                        case ChatStatemtns.NextMessageIsFiles:
+
+                            List<BotFile> attachedFile = new List<BotFile>();
+
+                            switch (e.Message.Type)
+                            {
+                                case Telegram.Bot.Types.Enums.MessageType.DocumentMessage:
+                                    if (e.Message.Document != null)
+                                    {
+                                        BotFile f = new BotFile(s);
+                                        f.FileId = e.Message.Document.FileId;
+                                        f.FileName = e.Message.Document.FileName;
+                                        f.Task = editedTask;
+                                        f.Save();
+                                        await Bot.SendTextMessageAsync(chatId, $"Файл {f.FileName} успешно прикреплен к задаче {editedTask.Name}");
+                                    }
+                                    break;
+                                default:
+                                    await Bot.SendTextMessageAsync(chatId, "Не удалось загрузить файл");
+                                    break;
+                            }
+                            break;
+
                     }
                 }
                 catch (Exception exception)
@@ -441,10 +412,60 @@ namespace TelegramCRM
             }
         }
 
+        private static void AddChatStatement(long chatId, ChatStatemtns statement, int dataId)
+        {
+            ChatStatements.Add(new ChatStatement() { ChatId = chatId, Statament = statement, BotTaskId = dataId });
+        }
 
+        private async static void ChangeTaskState(int taskId, long chatId, string stateName)
+        {
+            Session s = new Session();
+            BotTask task = s.GetObjectByKey<BotTask>(taskId);
+            if (task != null)
+            {
+                task.Status = stateName;
+                task.Save();
+                await Bot.SendTextMessageAsync(chatId, "Статус задачи изменен");
+            }
+            else
+            {
+                await Bot.SendTextMessageAsync(chatId, "Не удалось поменять статус");
+            }
+        }
+
+        private async static void ExecuteActionShowFiles(int taskId, long chatId)
+        {
+            using (Session s = new Session())
+            {
+                BotTask task = s.GetObjectByKey<BotTask>(taskId);
+                if (task != null)
+                {
+                    if (task.Files != null)
+                    {
+                        foreach (var file in task.Files)
+                        {
+                            await Bot.SendDocumentAsync(chatId, new FileToSend(file.FileId));
+                        }
+                    }
+                }
+            }
+        }
+
+        private async static void ExecuteActionEditTask(CallbackEventArgs args, long chatId)
+        {
+            await Bot.SendTextMessageAsync(chatId, "Выберите что хотите изменить", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditDetailViewButtons(args.DataId)));
+        }
+
+        private static void ExecuteActionDeleteTask(CallbackEventArgs args)
+        {
+            Session s = new Session();
+            s.Delete(s.GetObjectByKey<BotTask>(args.DataId));
+        }
 
         private static async void CommandTaskToMeExec(User fromUser, long chatId)
         {
+
+
             Session s = new Session();
             var tasks = from task in s.Query<BotTask>()
                         where task.Executor.TelegramId == fromUser.Id
@@ -567,7 +588,6 @@ namespace TelegramCRM
             userInDb.Save();
         }
 
-
         private async static void CommandShowAllTaskExec(long chatId)
         {
             Session session = new Session();
@@ -582,7 +602,6 @@ namespace TelegramCRM
                 await Bot.SendTextMessageAsync(chatId, "Задач пока нет");
             }
         }
-
 
         private static async void CommandCreateTaskExec(long chatId, string command, string appointerUserName)
         {
@@ -622,7 +641,6 @@ namespace TelegramCRM
                 await Bot.SendTextMessageAsync(chatId, $"Пользователь c id {userToDeletingId} не найден");
             }
         }
-
 
         private static async void CommandAllUsersExec(long chatId)
         {
