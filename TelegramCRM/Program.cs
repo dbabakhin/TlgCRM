@@ -156,10 +156,12 @@ namespace TelegramCRM
                     }
                 case nameof(CallbackActions.taskdetailviewall):
                     {
-                        Session s = new Session();
-                        BotTask task = s.GetObjectByKey<BotTask>(args.DataId);
-                        await Bot.SendTextMessageAsync(chatId, BotMessageHelper.GetTaskTextDetailView(task), Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditStateDeleteDetailViewButtonsAllow(args.DataId)));
-                        break;
+                        using (Session s = new Session())
+                        {
+                            BotTask task = s.GetObjectByKey<BotTask>(args.DataId);
+                            await Bot.SendTextMessageAsync(chatId, BotMessageHelper.GetTaskTextDetailView(task), Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditStateDeleteDetailViewButtonsAllow(args.DataId)));
+                            break;
+                        }
                     }
                 case nameof(CallbackActions.taskdetailviewdeny):
                     {
@@ -170,10 +172,12 @@ namespace TelegramCRM
                     }
                 case nameof(CallbackActions.taskdetailviewstat):
                     {
-                        Session s = new Session();
-                        BotTask task = s.GetObjectByKey<BotTask>(args.DataId);
-                        await Bot.SendTextMessageAsync(chatId, BotMessageHelper.GetTaskTextDetailView(task), Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditStateDeleteDetailViewButtonsState(args.DataId)));
-                        break;
+                        using (Session s = new Session())
+                        {
+                            BotTask task = s.GetObjectByKey<BotTask>(args.DataId);
+                            await Bot.SendTextMessageAsync(chatId, BotMessageHelper.GetTaskTextDetailView(task), Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditStateDeleteDetailViewButtonsState(args.DataId)));
+                            break;
+                        }
                     }
                 case nameof(CallbackActions.addfiles):
                     {
@@ -199,85 +203,87 @@ namespace TelegramCRM
             var chatStatement = statement.FirstOrDefault();
             if (chatStatement != null)
             {
-                Session s = new Session();
-                BotTask editedTask = s.GetObjectByKey<BotTask>(chatStatement.BotTaskId);
-                string messageText = e.Message.Text;
-                try
+                using (Session s = new Session())
                 {
-                    switch (chatStatement.Statament)
+                    BotTask editedTask = s.GetObjectByKey<BotTask>(chatStatement.BotTaskId);
+                    string messageText = e.Message.Text;
+                    try
                     {
-                        case ChatStatemtns.NextMessageIsTaksName:
-                            editedTask.Name = messageText;
-                            await Bot.SendTextMessageAsync(chatId, $"Название задачи изменено");
-                            break;
-                        case ChatStatemtns.NextMessageIsTaskDesc:
-                            editedTask.Description = messageText;
-                            await Bot.SendTextMessageAsync(chatId, $"Примечание задачи изменено");
-                            break;
-                        case ChatStatemtns.NextMessageIsTaskSDate:
-                            editedTask.StartDate = DateTime.Parse(messageText);
-                            await Bot.SendTextMessageAsync(chatId, $"Дата начала задачи изменена");
-                            break;
-                        case ChatStatemtns.NextMessageIsTaskEDate:
-                            editedTask.EndDate = DateTime.Parse(messageText);
-                            await Bot.SendTextMessageAsync(chatId, $"Дата окончания задачи изменена");
-                            break;
-                        case ChatStatemtns.NextMessageIdTaskPriorirty:
-                            editedTask.Priority = messageText;
-                            await Bot.SendTextMessageAsync(chatId, $"Приоритет задачи изменен");
-                            break;
-                        case ChatStatemtns.NextMessageIsTaskExecutorId:
+                        switch (chatStatement.Statament)
+                        {
+                            case ChatStatemtns.NextMessageIsTaksName:
+                                editedTask.Name = messageText;
+                                await Bot.SendTextMessageAsync(chatId, $"Название задачи изменено");
+                                break;
+                            case ChatStatemtns.NextMessageIsTaskDesc:
+                                editedTask.Description = messageText;
+                                await Bot.SendTextMessageAsync(chatId, $"Примечание задачи изменено");
+                                break;
+                            case ChatStatemtns.NextMessageIsTaskSDate:
+                                editedTask.StartDate = DateTime.Parse(messageText);
+                                await Bot.SendTextMessageAsync(chatId, $"Дата начала задачи изменена");
+                                break;
+                            case ChatStatemtns.NextMessageIsTaskEDate:
+                                editedTask.EndDate = DateTime.Parse(messageText);
+                                await Bot.SendTextMessageAsync(chatId, $"Дата окончания задачи изменена");
+                                break;
+                            case ChatStatemtns.NextMessageIdTaskPriorirty:
+                                editedTask.Priority = messageText;
+                                await Bot.SendTextMessageAsync(chatId, $"Приоритет задачи изменен");
+                                break;
+                            case ChatStatemtns.NextMessageIsTaskExecutorId:
 
-                            BotUser newExecutror = s.GetObjectByKey<BotUser>(Convert.ToInt32(messageText));
-                            if (newExecutror != null)
-                            {
-                                editedTask.Executor = newExecutror;
-                                await Bot.SendTextMessageAsync(chatId, $"Исполтитель задачи изменен");
-                                if (editedTask.Executor != null)
-                                    await Bot.SendTextMessageAsync(editedTask.Executor.ChatId, "Вам была назначена задача " + editedTask.Name + " выполнить до " + editedTask.EndDate);
+                                BotUser newExecutror = s.GetObjectByKey<BotUser>(Convert.ToInt32(messageText));
+                                if (newExecutror != null)
+                                {
+                                    editedTask.Executor = newExecutror;
+                                    await Bot.SendTextMessageAsync(chatId, $"Исполтитель задачи изменен");
+                                    if (editedTask.Executor != null)
+                                        await Bot.SendTextMessageAsync(editedTask.Executor.ChatId, "Вам была назначена задача " + editedTask.Name + " выполнить до " + editedTask.EndDate);
 
-                            }
-                            else
-                            {
-                                await Bot.SendTextMessageAsync(chatId, $"Не удалось найти пользователя с таким ID");
-                            }
-                            break;
-                        case ChatStatemtns.NextMessageIsTaskStatus:
-                            await Bot.SendTextMessageAsync(chatId, $"Стутс задачи изменен");
-                            break;
-                        case ChatStatemtns.NextMessageIsFiles:
+                                }
+                                else
+                                {
+                                    await Bot.SendTextMessageAsync(chatId, $"Не удалось найти пользователя с таким ID");
+                                }
+                                break;
+                            case ChatStatemtns.NextMessageIsTaskStatus:
+                                await Bot.SendTextMessageAsync(chatId, $"Стутс задачи изменен");
+                                break;
+                            case ChatStatemtns.NextMessageIsFiles:
 
-                            List<BotFile> attachedFile = new List<BotFile>();
+                                List<BotFile> attachedFile = new List<BotFile>();
 
-                            switch (e.Message.Type)
-                            {
-                                case Telegram.Bot.Types.Enums.MessageType.DocumentMessage:
-                                    if (e.Message.Document != null)
-                                    {
-                                        BotFile f = new BotFile(s);
-                                        f.FileId = e.Message.Document.FileId;
-                                        f.FileName = e.Message.Document.FileName;
-                                        f.Task = editedTask;
-                                        f.Save();
-                                        await Bot.SendTextMessageAsync(chatId, $"Файл {f.FileName} успешно прикреплен к задаче {editedTask.Name}");
-                                    }
-                                    break;
-                                default:
-                                    await Bot.SendTextMessageAsync(chatId, "Не удалось загрузить файл");
-                                    break;
-                            }
-                            break;
+                                switch (e.Message.Type)
+                                {
+                                    case Telegram.Bot.Types.Enums.MessageType.DocumentMessage:
+                                        if (e.Message.Document != null)
+                                        {
+                                            BotFile f = new BotFile(s);
+                                            f.FileId = e.Message.Document.FileId;
+                                            f.FileName = e.Message.Document.FileName;
+                                            f.Task = editedTask;
+                                            f.Save();
+                                            await Bot.SendTextMessageAsync(chatId, $"Файл {f.FileName} успешно прикреплен к задаче {editedTask.Name}");
+                                        }
+                                        break;
+                                    default:
+                                        await Bot.SendTextMessageAsync(chatId, "Не удалось загрузить файл");
+                                        break;
+                                }
+                                break;
+
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        await Bot.SendTextMessageAsync(chatId, exception.Message);
 
                     }
-                }
-                catch (Exception exception)
-                {
-                    await Bot.SendTextMessageAsync(chatId, exception.Message);
+                    editedTask.Save();
 
+                    ChatStatements.Remove(chatStatement);
                 }
-                editedTask.Save();
-
-                ChatStatements.Remove(chatStatement);
             }
             else
             {
@@ -443,17 +449,19 @@ namespace TelegramCRM
 
         private async static void ChangeTaskState(int taskId, long chatId, string stateName)
         {
-            Session s = new Session();
-            BotTask task = s.GetObjectByKey<BotTask>(taskId);
-            if (task != null)
+            using (Session s = new Session())
             {
-                task.Status = stateName;
-                task.Save();
-                await Bot.SendTextMessageAsync(chatId, "Статус задачи изменен");
-            }
-            else
-            {
-                await Bot.SendTextMessageAsync(chatId, "Не удалось поменять статус");
+                BotTask task = s.GetObjectByKey<BotTask>(taskId);
+                if (task != null)
+                {
+                    task.Status = stateName;
+                    task.Save();
+                    await Bot.SendTextMessageAsync(chatId, "Статус задачи изменен");
+                }
+                else
+                {
+                    await Bot.SendTextMessageAsync(chatId, "Не удалось поменять статус");
+                }
             }
         }
 
@@ -482,72 +490,78 @@ namespace TelegramCRM
 
         private static void ExecuteActionDeleteTask(CallbackEventArgs args)
         {
-            Session s = new Session();
-            s.Delete(s.GetObjectByKey<BotTask>(args.DataId));
+            using (Session s = new Session())
+            {
+                s.Delete(s.GetObjectByKey<BotTask>(args.DataId));
+            }
         }
 
         private static async void CommandTaskToMeExec(User fromUser, long chatId, bool filteredToDoneAndKill)
         {
 
-            Session s = new Session();
-            IQueryable<BotTask> tasks = null;
-            if (filteredToDoneAndKill)
+            using (Session s = new Session())
             {
-                tasks = from task in s.Query<BotTask>()
-                        where task.Executor.TelegramId == fromUser.Id
-                        && task.Status != "Убита" && task.Status != "Выполнена"
-                        select task;
-            }
-            else
-            {
-                tasks = from task in s.Query<BotTask>()
-                        where task.Executor.TelegramId == fromUser.Id
-                        select task;
-            }
-            if (tasks.FirstOrDefault() != null)
-            {
-                var taskToMe = tasks.ToList();
-                await Bot.SendTextMessageAsync(chatId, "Задачи поставленные вам", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(taskToMe, nameof(CallbackActions.taskdetailviewstat))));
-            }
-            else
-            {
-                await Bot.SendTextMessageAsync(chatId, $"У вас пока нет задач");
+                IQueryable<BotTask> tasks = null;
+                if (filteredToDoneAndKill)
+                {
+                    tasks = from task in s.Query<BotTask>()
+                            where task.Executor.TelegramId == fromUser.Id
+                            && task.Status != "Убита" && task.Status != "Выполнена"
+                            select task;
+                }
+                else
+                {
+                    tasks = from task in s.Query<BotTask>()
+                            where task.Executor.TelegramId == fromUser.Id
+                            select task;
+                }
+                if (tasks.FirstOrDefault() != null)
+                {
+                    var taskToMe = tasks.ToList();
+                    await Bot.SendTextMessageAsync(chatId, "Задачи поставленные вам", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(taskToMe, nameof(CallbackActions.taskdetailviewstat))));
+                }
+                else
+                {
+                    await Bot.SendTextMessageAsync(chatId, $"У вас пока нет задач");
+                }
             }
         }
 
         private static async void CommandMyTaskExec(User userFrom, long chatId, bool filteredToDoneAndKill)
         {
-            Session session = new Session();
-            var users = from user in session.Query<BotUser>()
-                        where user.TelegramId == userFrom.Id
-                        select user;
-            var existingUser = users.FirstOrDefault();
-            if (existingUser != null)
+            using (Session session = new Session())
             {
-                IQueryable<BotTask> userTasks = null;
-                if (filteredToDoneAndKill)
+                var users = from user in session.Query<BotUser>()
+                            where user.TelegramId == userFrom.Id
+                            select user;
+                var existingUser = users.FirstOrDefault();
+                if (existingUser != null)
                 {
-                    userTasks = from task in session.Query<BotTask>()
-                                where task.Appointer.Oid == existingUser.Oid || task.Appointer.UserName == existingUser.UserName
-                                || task.Appointer.TelegramId == existingUser.TelegramId && task.Status != "Выполнена" && task.Status != "Убита"
-                                select task;
+                    IQueryable<BotTask> userTasks = null;
+                    if (filteredToDoneAndKill)
+                    {
+                        userTasks = from task in session.Query<BotTask>()
+                                    where task.Appointer.Oid == existingUser.Oid || task.Appointer.UserName == existingUser.UserName
+                                    || task.Appointer.TelegramId == existingUser.TelegramId && task.Status != "Выполнена" && task.Status != "Убита"
+                                    select task;
+                    }
+                    else
+                    {
+                        userTasks = from task in session.Query<BotTask>()
+                                    where task.Appointer.Oid == existingUser.Oid || task.Appointer.UserName == existingUser.UserName
+                                    || task.Appointer.TelegramId == existingUser.TelegramId
+                                    select task;
+                    }
+                    if (userTasks != null)
+                    {
+                        var currUserTasks = userTasks.ToList();
+                        await Bot.SendTextMessageAsync(chatId, "Задачи поставленные мной", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(currUserTasks, nameof(CallbackActions.taskdetailviewall))));
+                    }
                 }
                 else
                 {
-                    userTasks = from task in session.Query<BotTask>()
-                                where task.Appointer.Oid == existingUser.Oid || task.Appointer.UserName == existingUser.UserName
-                                || task.Appointer.TelegramId == existingUser.TelegramId
-                                select task;
+                    await Bot.SendTextMessageAsync(chatId, $"Нет данных");
                 }
-                if (userTasks != null)
-                {
-                    var currUserTasks = userTasks.ToList();
-                    await Bot.SendTextMessageAsync(chatId, "Задачи поставленные мной", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(currUserTasks, nameof(CallbackActions.taskdetailviewall))));
-                }
-            }
-            else
-            {
-                await Bot.SendTextMessageAsync(chatId, $"Нет данных");
             }
         }
 
@@ -652,13 +666,15 @@ namespace TelegramCRM
         {
             try
             {
-                Session session = new Session();
-                BotTask newTask = new BotTask(session);
-                CommandProcessor.ParseNewTaskCommand(newTask, command, session, appointerUserName);
-                newTask.Save();
-                await Bot.SendTextMessageAsync(chatId, $"Задача {newTask.Name} успешно добавлен в базу данных");
-                if (newTask.Executor != null)
-                    await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам была назначена задача " + newTask.Name + " выполнить до " + newTask.EndDate);
+                using (Session session = new Session())
+                {
+                    BotTask newTask = new BotTask(session);
+                    CommandProcessor.ParseNewTaskCommand(newTask, command, session, appointerUserName);
+                    newTask.Save();
+                    await Bot.SendTextMessageAsync(chatId, $"Задача {newTask.Name} успешно добавлен в базу данных");
+                    if (newTask.Executor != null)
+                        await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам была назначена задача " + newTask.Name + " выполнить до " + newTask.EndDate);
+                }
             }
             catch (Exception e)
             {
@@ -689,15 +705,17 @@ namespace TelegramCRM
 
         private static async void CommandAllUsersExec(long chatId)
         {
-            Session session = new Session();
-            var users = session.Query<BotUser>();
-            StringBuilder usersList = new StringBuilder();
-            foreach (BotUser user in users)
+            using (Session session = new Session())
             {
-                usersList.AppendFormat("\n\t id: {0},\n\t username: {1} \n\t first name: {2}\n\t last name: {3}\n\t telegram ID: {4} \n\t Право на CRM {5} \n\t Администратор {6} \n *************\n", user.Oid, user.UserName, user.FirstName, user.LastName, user.TelegramId, user.HasAccess, user.IsAdministrative);
-            }
+                var users = session.Query<BotUser>();
+                StringBuilder usersList = new StringBuilder();
+                foreach (BotUser user in users)
+                {
+                    usersList.AppendFormat("\n\t id: {0},\n\t username: {1} \n\t first name: {2}\n\t last name: {3}\n\t telegram ID: {4} \n\t Право на CRM {5} \n\t Администратор {6} \n *************\n", user.Oid, user.UserName, user.FirstName, user.LastName, user.TelegramId, user.HasAccess, user.IsAdministrative);
+                }
 
-            await Bot.SendTextMessageAsync(chatId, usersList.ToString());
+                await Bot.SendTextMessageAsync(chatId, usersList.ToString());
+            }
         }
 
 
