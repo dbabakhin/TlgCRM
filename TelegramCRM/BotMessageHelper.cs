@@ -115,6 +115,7 @@ namespace TelegramCRM
         public static string GetHelpMessage()
         {
             return $@"
+            
             /help - помощь
             
             /killuser id - удаляет пользователя из базы 
@@ -123,9 +124,15 @@ namespace TelegramCRM
 
             /allusers - список всех пользователей
 
-            /mytask - задачи поставленные мной
+            /alltask - список всех задач
 
-            /tasktome - задачи поставленные мне
+            /mytask - задачи поставленные мной кроме завершенных и убитых
+
+            /tasktome - задачи поставленные мне кроме завершенных у убитых
+
+            /mytaskall - задачи поставленные мной 
+
+            /tasktomeall - задачи поставленные мне 
 
             /setuser id - дать права доступа на CRM
     

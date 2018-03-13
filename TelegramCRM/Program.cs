@@ -23,7 +23,7 @@ namespace TelegramCRM
 
         public enum BotCommandList
         {
-            start, tasktome, ntask, mytask, killmytask, newuser, allusers, killuser, blockuser, alltask, exptome, expmy, help, setadm, setuser
+            start, tasktome, ntask, mytask, killmytask, newuser, allusers, killuser, blockuser, alltask, exptome, expmy, help, setadm, setuser, mytaskall, tasktomeall
         }
 
         private static readonly string apiKey = "559244515:AAEKvJKLQ-jBkilGwGNU7EJmKlQ2f43xOzY";
@@ -383,7 +383,7 @@ namespace TelegramCRM
 
                             if (PermissionSystem.HasAccess(currentUser.Oid))
                             {
-                                CommandMyTaskExec(e.Message.From, chatId);
+                                CommandMyTaskExec(e.Message.From, chatId, true);
                             }
                             else
                             {
@@ -395,7 +395,31 @@ namespace TelegramCRM
                         {
                             if (PermissionSystem.HasAccess(currentUser.Oid))
                             {
-                                CommandTaskToMeExec(e.Message.From, chatId);
+                                CommandTaskToMeExec(e.Message.From, chatId, true);
+                            }
+                            else
+                            {
+                                await Bot.SendTextMessageAsync(chatId, $"У вас нет прав на это действие");
+                            }
+                            break;
+                        }
+                    case nameof(BotCommandList.mytaskall):
+                        {
+                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            {
+                                CommandMyTaskExec(e.Message.From, chatId, false);
+                            }
+                            else
+                            {
+                                await Bot.SendTextMessageAsync(chatId, $"У вас нет прав на это действие");
+                            }
+                            break;
+                        }
+                    case nameof(BotCommandList.tasktomeall):
+                        {
+                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            {
+                                CommandTaskToMeExec(e.Message.From, chatId, false);
                             }
                             else
                             {
@@ -462,14 +486,24 @@ namespace TelegramCRM
             s.Delete(s.GetObjectByKey<BotTask>(args.DataId));
         }
 
-        private static async void CommandTaskToMeExec(User fromUser, long chatId)
+        private static async void CommandTaskToMeExec(User fromUser, long chatId, bool filteredToDoneAndKill)
         {
 
-
             Session s = new Session();
-            var tasks = from task in s.Query<BotTask>()
+            IQueryable<BotTask> tasks = null;
+            if (filteredToDoneAndKill)
+            {
+                tasks = from task in s.Query<BotTask>()
+                        where task.Executor.TelegramId == fromUser.Id
+                        && task.Status != "Убита" && task.Status != "Выполнена"
+                        select task;
+            }
+            else
+            {
+                tasks = from task in s.Query<BotTask>()
                         where task.Executor.TelegramId == fromUser.Id
                         select task;
+            }
             if (tasks.FirstOrDefault() != null)
             {
                 var taskToMe = tasks.ToList();
@@ -481,7 +515,7 @@ namespace TelegramCRM
             }
         }
 
-        private static async void CommandMyTaskExec(User userFrom, long chatId)
+        private static async void CommandMyTaskExec(User userFrom, long chatId, bool filteredToDoneAndKill)
         {
             Session session = new Session();
             var users = from user in session.Query<BotUser>()
@@ -490,10 +524,21 @@ namespace TelegramCRM
             var existingUser = users.FirstOrDefault();
             if (existingUser != null)
             {
-                var userTasks = from task in session.Query<BotTask>()
+                IQueryable<BotTask> userTasks = null;
+                if (filteredToDoneAndKill)
+                {
+                    userTasks = from task in session.Query<BotTask>()
+                                where task.Appointer.Oid == existingUser.Oid || task.Appointer.UserName == existingUser.UserName
+                                || task.Appointer.TelegramId == existingUser.TelegramId && task.Status != "Выполнена" && task.Status != "Убита"
+                                select task;
+                }
+                else
+                {
+                    userTasks = from task in session.Query<BotTask>()
                                 where task.Appointer.Oid == existingUser.Oid || task.Appointer.UserName == existingUser.UserName
                                 || task.Appointer.TelegramId == existingUser.TelegramId
                                 select task;
+                }
                 if (userTasks != null)
                 {
                     var currUserTasks = userTasks.ToList();
