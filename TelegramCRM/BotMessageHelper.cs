@@ -115,6 +115,7 @@ namespace TelegramCRM
         public static string GetHelpMessage()
         {
             return $@"
+            /ntask 2 name:TaskName, dt:TaskDescription, dt:24/12/2018 20:33
             
             /help - помощь
             
