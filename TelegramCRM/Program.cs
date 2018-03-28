@@ -289,7 +289,6 @@ namespace TelegramCRM
             {
 
                 BotUser currentUser = PermissionSystem.GetUserByTlgId(e.Message.From.Id);
-
                 string insertedCommand = CommandProcessor.CommandParser(e.Message.Text);
                 string commandText = e.Message.Text;
                 switch (insertedCommand)
@@ -314,7 +313,7 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.allusers):
                         {
-                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            if (currentUser != null && PermissionSystem.HasAccess(currentUser.Oid))
                             {
                                 CommandAllUsersExec(chatId);
                             }
@@ -326,9 +325,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.killuser):
                         {
-                            if (PermissionSystem.IsAdministrative(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandKillUsersExec(chatId, commandText);
+                                if (PermissionSystem.IsAdministrative(currentUser.Oid))
+                                {
+                                    CommandKillUsersExec(chatId, commandText);
+                                }
                             }
                             else
                             {
@@ -338,9 +340,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.ntask):
                         {
-                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandCreateTaskExec(chatId, commandText, e.Message.From.Username);
+                                if (PermissionSystem.HasAccess(currentUser.Oid))
+                                {
+                                    CommandCreateTaskExec(chatId, commandText, e.Message.From.Username);
+                                }
                             }
                             else
                             {
@@ -350,9 +355,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.alltask):
                         {
-                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandShowAllTaskExec(chatId);
+                                if (PermissionSystem.HasAccess(currentUser.Oid))
+                                {
+                                    CommandShowAllTaskExec(chatId);
+                                }
                             }
                             else
                             {
@@ -362,9 +370,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.setuser):
                         {
-                            if (PermissionSystem.IsAdministrative(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandSetUserExec(chatId, commandText);
+                                if (PermissionSystem.IsAdministrative(currentUser.Oid))
+                                {
+                                    CommandSetUserExec(chatId, commandText);
+                                }
                             }
                             else
                             {
@@ -374,9 +385,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.setadm):
                         {
-                            if (PermissionSystem.IsAdministrative(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandSetAdmExec(chatId, commandText);
+                                if (PermissionSystem.IsAdministrative(currentUser.Oid))
+                                {
+                                    CommandSetAdmExec(chatId, commandText);
+                                }
                             }
                             else
                             {
@@ -386,10 +400,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.mytask):
                         {
-
-                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandMyTaskExec(e.Message.From, chatId, true);
+                                if (PermissionSystem.HasAccess(currentUser.Oid))
+                                {
+                                    CommandMyTaskExec(e.Message.From, chatId, true);
+                                }
                             }
                             else
                             {
@@ -399,9 +415,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.tasktome):
                         {
-                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandTaskToMeExec(e.Message.From, chatId, true);
+                                if (PermissionSystem.HasAccess(currentUser.Oid))
+                                {
+                                    CommandTaskToMeExec(e.Message.From, chatId, true);
+                                }
                             }
                             else
                             {
@@ -411,9 +430,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.mytaskall):
                         {
-                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandMyTaskExec(e.Message.From, chatId, false);
+                                if (PermissionSystem.HasAccess(currentUser.Oid))
+                                {
+                                    CommandMyTaskExec(e.Message.From, chatId, false);
+                                }
                             }
                             else
                             {
@@ -423,9 +445,12 @@ namespace TelegramCRM
                         }
                     case nameof(BotCommandList.tasktomeall):
                         {
-                            if (PermissionSystem.HasAccess(currentUser.Oid))
+                            if (currentUser != null)
                             {
-                                CommandTaskToMeExec(e.Message.From, chatId, false);
+                                if (PermissionSystem.HasAccess(currentUser.Oid))
+                                {
+                                    CommandTaskToMeExec(e.Message.From, chatId, false);
+                                }
                             }
                             else
                             {
@@ -673,7 +698,9 @@ namespace TelegramCRM
                     newTask.Save();
                     await Bot.SendTextMessageAsync(chatId, $"Задача {newTask.Name} успешно добавлен в базу данных");
                     if (newTask.Executor != null)
-                        await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам была назначена задача " + newTask.Name + " выполнить до " + newTask.EndDate);
+                        await Bot.SendTextMessageAsync(newTask.Executor.Oid, "Вам поставлена новая задача", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(new List<BotTask>() { newTask }, nameof(CallbackActions.taskdetailviewstat))));
+
+                    //await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам назначена новая задача " + newTask.Name + " выполнить до " + newTask.EndDate);
                 }
             }
             catch (Exception e)
