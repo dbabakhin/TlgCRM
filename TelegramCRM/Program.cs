@@ -175,6 +175,10 @@ namespace TelegramCRM
                         using (Session s = new Session())
                         {
                             BotTask task = s.GetObjectByKey<BotTask>(args.DataId);
+                            if (task.Status == "Новая")
+                            {
+                                task.Status = "Прочитана";
+                            }
                             await Bot.SendTextMessageAsync(chatId, BotMessageHelper.GetTaskTextDetailView(task), Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditStateDeleteDetailViewButtonsState(args.DataId)));
                             break;
                         }
@@ -695,10 +699,11 @@ namespace TelegramCRM
                 {
                     BotTask newTask = new BotTask(session);
                     CommandProcessor.ParseNewTaskCommand(newTask, command, session, appointerUserName);
+                    newTask.Status = "Новая";
                     newTask.Save();
                     await Bot.SendTextMessageAsync(chatId, $"Задача {newTask.Name} успешно добавлен в базу данных");
                     if (newTask.Executor != null)
-                        await Bot.SendTextMessageAsync(newTask.Executor.Oid, "Вам поставлена новая задача", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(new List<BotTask>() { newTask }, nameof(CallbackActions.taskdetailviewstat))));
+                        await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам поставлена новая задача", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(new List<BotTask>() { newTask }, nameof(CallbackActions.taskdetailviewstat))));
 
                     //await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам назначена новая задача " + newTask.Name + " выполнить до " + newTask.EndDate);
                 }
