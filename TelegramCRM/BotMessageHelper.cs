@@ -142,6 +142,41 @@ namespace TelegramCRM
             ";
         }
 
+        internal static InlineKeyboardButton[][] GetTaskPrioprityButtons(long taskid)
+        {
+            var ikbList = new List<InlineKeyboardButton[]>();
+            var ikb = new List<InlineKeyboardButton>();
+            ikb.Add(new InlineKeyboardCallbackButton("Высокий", taskid + "," + nameof(CallbackActions.phight)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
+            ikb.Add(new InlineKeyboardCallbackButton("Средний", taskid + "," + nameof(CallbackActions.pmiddle)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
+            ikb.Add(new InlineKeyboardCallbackButton("Низкий", taskid + "," + nameof(CallbackActions.plow)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
+
+
+            return ikbList.ToArray();
+        }
+
+        internal static InlineKeyboardButton[][] GetTaskPrioprityButtonsWithoultChecking(long taskid)
+        {
+            var ikbList = new List<InlineKeyboardButton[]>();
+            var ikb = new List<InlineKeyboardButton>();
+            ikb.Add(new InlineKeyboardCallbackButton("Высокий", taskid + "," + nameof(CallbackActions.phightw)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
+            ikb.Add(new InlineKeyboardCallbackButton("Средний", taskid + "," + nameof(CallbackActions.pmiddlew)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
+            ikb.Add(new InlineKeyboardCallbackButton("Низкий", taskid + "," + nameof(CallbackActions.ploww)));
+            ikbList.Add(ikb.ToArray());
+            ikb.Clear();
+
+
+            return ikbList.ToArray();
+        }
     }
 }
 

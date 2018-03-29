@@ -17,7 +17,7 @@ namespace TelegramCRM
     {
         public enum CallbackActions
         {
-            showfiles, addfiles, taskdetailviewall, taskdetailviewstat, taskdetailviewdeny, deletetask, edittask, edittaskname, edittasksdate, edittaskedate, edittaskexecutor, edittaskdesc, edittaskstat, edittaskpriority, statenew, stateread, statework, statedone, statecorect, statekill,
+            phightw, pmiddlew, ploww, phight, pmiddle, plow, showfiles, addfiles, taskdetailviewall, taskdetailviewstat, taskdetailviewdeny, deletetask, edittask, edittaskname, edittasksdate, edittaskedate, edittaskexecutor, edittaskdesc, edittaskstat, edittaskpriority, statenew, stateread, statework, statedone, statecorect, statekill,
             tasklistview
         }
 
@@ -44,12 +44,49 @@ namespace TelegramCRM
             Console.ReadLine();
         }
 
+        private static async void ChangeTaskProprity(int taskId, string priority, long chatId,bool useCheck)
+        {
+            using (Session s = new Session())
+            {
+                var res = s.GetObjectByKey<BotTask>(taskId);
+                if (res != null)
+                {
+                    res.Priority = priority;
+                    res.Save();
+                    await Bot.SendTextMessageAsync(chatId, $"Статус успешно изменен");
+                    if (useCheck)
+                        await CheckTaskToFill(res, chatId);
+                }
+            }
+        }
+
         private static async void Bot_OnCallbackQuery(object sender, CallbackQueryEventArgs e)
         {
             CallbackEventArgs args = CommandProcessor.ParseCallbackAgrs(e.CallbackQuery.Data);
             long chatId = e.CallbackQuery.Message.Chat.Id;
             switch (args.CallbackAction)
             {
+
+
+                case nameof(CallbackActions.phight):
+                    ChangeTaskProprity(args.DataId, "Высокий", chatId, true);
+                    break;
+                case nameof(CallbackActions.pmiddle):
+                    ChangeTaskProprity(args.DataId, "Средний", chatId, true);
+                    break;
+                case nameof(CallbackActions.plow):
+                    ChangeTaskProprity(args.DataId, "Низкий", chatId, true);
+                    break;
+                case nameof(CallbackActions.phightw):
+                    ChangeTaskProprity(args.DataId, "Высокий", chatId, false);
+                    break;
+                case nameof(CallbackActions.pmiddlew):
+                    ChangeTaskProprity(args.DataId, "Средний", chatId, false);
+                    break;
+                case nameof(CallbackActions.ploww):
+                    ChangeTaskProprity(args.DataId, "Низкий", chatId, false);
+                    break;
+
                 case nameof(CallbackActions.deletetask):
                     {
                         try
@@ -150,8 +187,8 @@ namespace TelegramCRM
                     }
                 case nameof(CallbackActions.edittaskpriority):
                     {
-                        AddChatStatement(chatId, ChatStatemtns.NextMessageIdTaskPriorirty, args.DataId);
-                        await Bot.SendTextMessageAsync(chatId, $"Выберите приоритет");
+                        // AddChatStatement(chatId, ChatStatemtns.NextMessageIdTaskPriorirty, args.DataId);
+                        await Bot.SendTextMessageAsync(chatId, $"Введите приоритет задачи", Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskPrioprityButtonsWithoultChecking(args.DataId)));
                         break;
                     }
                 case nameof(CallbackActions.taskdetailviewall):
@@ -212,12 +249,6 @@ namespace TelegramCRM
                 await Bot.SendTextMessageAsync(chatId, $"Введите описание задачи");
                 return false;
             }
-            if (task.Executor == null)
-            {
-                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskExecutorId });
-                await Bot.SendTextMessageAsync(chatId, $"Введите ID исполнителя");
-                return false;
-            }
             if (task.EndDate == null || task.EndDate == new DateTime())
             {
                 ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskDt });
@@ -227,7 +258,13 @@ namespace TelegramCRM
             if (task.Priority == null)
             {
                 ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskPriority });
-                await Bot.SendTextMessageAsync(chatId, $"Введите приоритет задачи");
+                await Bot.SendTextMessageAsync(chatId, $"Введите приоритет задачи", Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskPrioprityButtons(task.Oid)));
+                return false;
+            }
+            if (task.Executor == null)
+            {
+                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskExecutorId });
+                await Bot.SendTextMessageAsync(chatId, $"Введите ID исполнителя");
                 return false;
             }
 
@@ -786,7 +823,7 @@ namespace TelegramCRM
                 {
                     BotTask newTask = new BotTask(session);
                     CommandProcessor.ParseNewTaskCommand(newTask, command, session, appointerUserName);
-                  
+
                     newTask.Status = "Новая";
                     newTask.Save();
                     var res = await CheckTaskToFill(newTask, chatId);
