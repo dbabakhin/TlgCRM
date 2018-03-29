@@ -25,11 +25,24 @@ namespace TelegramCRM
             return -1;
         }
 
+
+
         public static void ParseNewTaskCommand(BotTask task, string command, Session session, string appointerUserName)
         {
-            string[] commandAgrs = command.Split(',');
+            BotUser appointer = session.FindObject<BotUser>(CriteriaOperator.Parse($"UserName == '{appointerUserName}'"));
+            if (appointer == null)
+                throw new Exception($"Пробема при выставлении назначевшего задачу, пользователь в логином {appointerUserName} не найден в базе данных");
 
-            int? executorId = Convert.ToInt32(command.Split(' ')[1].Split(' ')[0]);
+            task.Appointer = session.FindObject<BotUser>(CriteriaOperator.Parse($"UserName == '{appointerUserName}'"));
+            task.StartDate = DateTime.Now;
+
+            string[] commandAgrs = command.Split(',');
+            int? executorId = null;
+            var pieceOfCommand = command.Split(' ');
+            if (pieceOfCommand.Count() > 1)
+            {
+                executorId = Convert.ToInt32(pieceOfCommand[1].Split(' ')[0]);
+            }
             if (executorId != null)
             {
                 BotUser executor = session.FindObject<BotUser>(CriteriaOperator.Parse($"Oid == {executorId}"));
@@ -37,12 +50,11 @@ namespace TelegramCRM
                 {
                     task.Executor = session.FindObject<BotUser>(CriteriaOperator.Parse($"Oid == {executorId}"));
 
-                    BotUser appointer = session.FindObject<BotUser>(CriteriaOperator.Parse($"UserName == '{appointerUserName}'"));
-                    if (appointer == null)
-                        throw new Exception($"Пробема при выставлении назначевшего задачу, пользователь в логином {appointerUserName} не найден в базе данных");
+                    //BotUser appointer = session.FindObject<BotUser>(CriteriaOperator.Parse($"UserName == '{appointerUserName}'"));
+                    //if (appointer == null)
+                    //    throw new Exception($"Пробема при выставлении назначевшего задачу, пользователь в логином {appointerUserName} не найден в базе данных");
 
-                    task.Appointer = session.FindObject<BotUser>(CriteriaOperator.Parse($"UserName == '{appointerUserName}'"));
-                    task.StartDate = DateTime.Now;
+                    //task.Appointer = session.FindObject<BotUser>(CriteriaOperator.Parse($"UserName == '{appointerUserName}'"));
                     foreach (string arg in commandAgrs)
                     {
                         if (arg.Contains("name:"))
@@ -59,6 +71,10 @@ namespace TelegramCRM
                             string dateString = arg.Split(':')[1] + ':' + minutes;
                             DateTime dt = DateTime.Parse(dateString);
                             task.EndDate = dt;
+                        }
+                        if (arg.Contains("p:"))
+                        {
+                            task.Priority = arg.Split(':')[1];
                         }
                     }
                 }

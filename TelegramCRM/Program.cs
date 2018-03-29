@@ -198,6 +198,43 @@ namespace TelegramCRM
         }
 
 
+        private static async Task<bool> CheckTaskToFill(BotTask task, long chatId)
+        {
+            if (string.IsNullOrEmpty(task.Name))
+            {
+                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskName });
+                await Bot.SendTextMessageAsync(chatId, $"Введите название задачи");
+                return false;
+            }
+            if (string.IsNullOrEmpty(task.Description))
+            {
+                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskDesc });
+                await Bot.SendTextMessageAsync(chatId, $"Введите описание задачи");
+                return false;
+            }
+            if (task.Executor == null)
+            {
+                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskExecutorId });
+                await Bot.SendTextMessageAsync(chatId, $"Введите ID исполнителя");
+                return false;
+            }
+            if (task.EndDate == null || task.EndDate == new DateTime())
+            {
+                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskDt });
+                await Bot.SendTextMessageAsync(chatId, $"Введите дату окончания задачи");
+                return false;
+            }
+            if (task.Priority == null)
+            {
+                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskPriority });
+                await Bot.SendTextMessageAsync(chatId, $"Введите приоритет задачи");
+                return false;
+            }
+
+            await Bot.SendTextMessageAsync(chatId, $"Задача {task.Name} успешно создана!");
+            return true;
+        }
+
         private static async void Bot_OnMessage(object sender, Telegram.Bot.Args.MessageEventArgs e)
         {
             long chatId = e.Message.Chat.Id;
@@ -277,6 +314,56 @@ namespace TelegramCRM
                                 }
                                 break;
 
+                            case ChatStatemtns.NextMessageIsNewTaskName:
+                                editedTask.Name = messageText;
+                                editedTask.Save();
+                                await Bot.SendTextMessageAsync(chatId, $"Название имзменено");
+                                await CheckTaskToFill(editedTask, chatId);
+                                break;
+                            case ChatStatemtns.NextMessageIsNewTaskDesc:
+                                editedTask.Description = messageText;
+                                editedTask.Save();
+                                await Bot.SendTextMessageAsync(chatId, $"Описание изменено");
+                                await CheckTaskToFill(editedTask, chatId);
+                                break;
+                            case ChatStatemtns.NextMessageIsNewTaskDt:
+                                try
+                                {
+                                    DateTime dt = DateTime.Parse(messageText);
+                                    editedTask.EndDate = dt;
+                                    editedTask.Save();
+                                    await Bot.SendTextMessageAsync(chatId, $"Дата для выполнения изменена");
+                                }
+                                catch
+                                {
+                                    await Bot.SendTextMessageAsync(chatId, $"Неверный формат даты");
+                                }
+                                await CheckTaskToFill(editedTask, chatId);
+                                break;
+                            case ChatStatemtns.NextMessageIsNewTaskExecutorId:
+                                BotUser executor = s.GetObjectByKey<BotUser>(Convert.ToInt32(messageText));
+                                if (executor != null)
+                                {
+                                    editedTask.Executor = executor;
+                                    editedTask.Save();
+                                    await Bot.SendTextMessageAsync(chatId, $"Исполнитель назначен");
+                                    if (editedTask.Executor != null)
+                                        await Bot.SendTextMessageAsync(editedTask.Executor.ChatId, "Вам была назначена задача " + editedTask.Name + " выполнить до " + editedTask.EndDate);
+                                }
+                                else
+                                {
+                                    await Bot.SendTextMessageAsync(chatId, $"Не удалось найти пользователя с таким ID");
+                                }
+                                if (editedTask.Executor != null)
+                                    await Bot.SendTextMessageAsync(editedTask.Executor.ChatId, "Вам поставлена новая задача", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(new List<BotTask>() { editedTask }, nameof(CallbackActions.taskdetailviewstat))));
+                                await CheckTaskToFill(editedTask, chatId);
+                                break;
+                            case ChatStatemtns.NextMessageIsNewTaskPriority:
+                                editedTask.Priority = messageText;
+                                editedTask.Save();
+                                await Bot.SendTextMessageAsync(chatId, $"Приоритет назначен");
+                                await CheckTaskToFill(editedTask, chatId);
+                                break;
                         }
                     }
                     catch (Exception exception)
@@ -699,13 +786,16 @@ namespace TelegramCRM
                 {
                     BotTask newTask = new BotTask(session);
                     CommandProcessor.ParseNewTaskCommand(newTask, command, session, appointerUserName);
+                  
                     newTask.Status = "Новая";
                     newTask.Save();
-                    await Bot.SendTextMessageAsync(chatId, $"Задача {newTask.Name} успешно добавлен в базу данных");
-                    if (newTask.Executor != null)
-                        await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам поставлена новая задача", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(new List<BotTask>() { newTask }, nameof(CallbackActions.taskdetailviewstat))));
-
-                    //await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам назначена новая задача " + newTask.Name + " выполнить до " + newTask.EndDate);
+                    var res = await CheckTaskToFill(newTask, chatId);
+                    if (res)
+                    {
+                        await Bot.SendTextMessageAsync(chatId, $"Задача {newTask.Name} успешно добавлена в базу данных");
+                        if (newTask.Executor != null)
+                            await Bot.SendTextMessageAsync(newTask.Executor.ChatId, "Вам поставлена новая задача", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(new List<BotTask>() { newTask }, nameof(CallbackActions.taskdetailviewstat))));
+                    }
                 }
             }
             catch (Exception e)
