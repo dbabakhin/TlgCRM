@@ -398,7 +398,6 @@ namespace TelegramCRM
             }
             else
             {
-
                 BotUser currentUser = PermissionSystem.GetUserByTlgId(e.Message.From.Id);
                 string insertedCommand = CommandProcessor.CommandParser(e.Message.Text);
                 string commandText = e.Message.Text;

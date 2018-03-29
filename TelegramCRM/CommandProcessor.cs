@@ -49,12 +49,6 @@ namespace TelegramCRM
                 if (executor != null)
                 {
                     task.Executor = session.FindObject<BotUser>(CriteriaOperator.Parse($"Oid == {executorId}"));
-
-                    //BotUser appointer = session.FindObject<BotUser>(CriteriaOperator.Parse($"UserName == '{appointerUserName}'"));
-                    //if (appointer == null)
-                    //    throw new Exception($"Пробема при выставлении назначевшего задачу, пользователь в логином {appointerUserName} не найден в базе данных");
-
-                    //task.Appointer = session.FindObject<BotUser>(CriteriaOperator.Parse($"UserName == '{appointerUserName}'"));
                     foreach (string arg in commandAgrs)
                     {
                         if (arg.Contains("name:"))
