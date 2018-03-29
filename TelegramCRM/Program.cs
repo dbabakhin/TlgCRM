@@ -55,7 +55,14 @@ namespace TelegramCRM
                     res.Save();
                     await Bot.SendTextMessageAsync(chatId, $"Статус успешно изменен");
                     if (useCheck)
+                    {
                         await CheckTaskToFill(res, chatId);
+                        //var state = from s in ChatStatements
+                        //            where s.BotTaskId == taskId && s.Statament == ChatStatemtns
+                        //ChatStatements.Remove()
+                        //                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskPriority });
+
+                    }
                 }
             }
         }
@@ -187,7 +194,6 @@ namespace TelegramCRM
                     }
                 case nameof(CallbackActions.edittaskpriority):
                     {
-                        // AddChatStatement(chatId, ChatStatemtns.NextMessageIdTaskPriorirty, args.DataId);
                         await Bot.SendTextMessageAsync(chatId, $"Введите приоритет задачи", Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskPrioprityButtonsWithoultChecking(args.DataId)));
                         break;
                     }
@@ -215,6 +221,7 @@ namespace TelegramCRM
                             if (task.Status == "Новая")
                             {
                                 task.Status = "Прочитана";
+                                task.Save();
                             }
                             await Bot.SendTextMessageAsync(chatId, BotMessageHelper.GetTaskTextDetailView(task), Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskEditStateDeleteDetailViewButtonsState(args.DataId)));
                             break;
@@ -257,7 +264,7 @@ namespace TelegramCRM
             }
             if (task.Priority == null)
             {
-                ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskPriority });
+               // ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskPriority });
                 await Bot.SendTextMessageAsync(chatId, $"Введите приоритет задачи", Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskPrioprityButtons(task.Oid)));
                 return false;
             }
@@ -395,12 +402,12 @@ namespace TelegramCRM
                                     await Bot.SendTextMessageAsync(editedTask.Executor.ChatId, "Вам поставлена новая задача", Telegram.Bot.Types.Enums.ParseMode.Default, true, false, 0, new InlineKeyboardMarkup(BotMessageHelper.TaskButtonListView(new List<BotTask>() { editedTask }, nameof(CallbackActions.taskdetailviewstat))));
                                 await CheckTaskToFill(editedTask, chatId);
                                 break;
-                            case ChatStatemtns.NextMessageIsNewTaskPriority:
-                                editedTask.Priority = messageText;
-                                editedTask.Save();
-                                await Bot.SendTextMessageAsync(chatId, $"Приоритет назначен");
-                                await CheckTaskToFill(editedTask, chatId);
-                                break;
+                            //case ChatStatemtns.NextMessageIsNewTaskPriority:
+                            //    editedTask.Priority = messageText;
+                            //    editedTask.Save();
+                            //    await Bot.SendTextMessageAsync(chatId, $"Приоритет назначен");
+                            //    await CheckTaskToFill(editedTask, chatId);
+                            //    break;
                         }
                     }
                     catch (Exception exception)
