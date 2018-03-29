@@ -30,7 +30,7 @@ namespace TelegramCRM
         public static string GetTaskTextDetailView(BotTask task)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendFormat("\n id: {0},  \n Название: {1}  \n Описание: {2}   \n Сделать до: {3}    \n Создана: {4}      \n Исполнитель: {5}      \n Назначил:{6}    \n   Статус: {7} \n ******************", task.Oid, task.Name, task.Description, task.EndDate, task.StartDate, task.Executor?.UserName, task.Appointer?.UserName, task.Status);
+            sb.AppendFormat("\n       \t id: {0},  \n Название: {1}  \n Описание: {2}   \n Сделать до: {3}    \n Создана: {4}      \n Исполнитель: {5}      \n Назначил:{6}    \n Статус: {7} \n Приоритет: {8} \n ___________________________", task.Oid, task.Name, task.Description, task.EndDate, task.StartDate, task.Executor?.UserName, task.Appointer?.UserName, task.Status, task.Priority);
             return sb.ToString();
         }
 
@@ -115,14 +115,14 @@ namespace TelegramCRM
         public static string GetHelpMessage()
         {
             return $@"
+            /ntask - создать задачу
+
             /ntask 2 name:TaskName, dt:TaskDescription, dt:24/12/2018 20:33
             
             /help - помощь
             
             /killuser id - удаляет пользователя из базы 
             
-            /ntask (запятые обязательны) id(обязательно) name:названиеЗадачи, description:описаниеЗадачи, dt:10/12/2018 23:25
-
             /allusers - список всех пользователей
 
             /alltask - список всех задач
@@ -138,6 +138,8 @@ namespace TelegramCRM
             /setuser id - дать права доступа на CRM
     
             /setadm id - Права администратора
+
+            /killmytask - Убивает все задачи поставленные вами
             
             ";
         }

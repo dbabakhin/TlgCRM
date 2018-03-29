@@ -247,7 +247,6 @@ namespace TelegramCRM
             }
             if (task.Priority == null)
             {
-                // ChatStatements.Add(new ChatStatement() { ChatId = chatId, BotTaskId = task.Oid, Statament = ChatStatemtns.NextMessageIsNewTaskPriority });
                 await Bot.SendTextMessageAsync(chatId, $"Введите приоритет задачи", Telegram.Bot.Types.Enums.ParseMode.Default, false, false, 0, new InlineKeyboardMarkup(BotMessageHelper.GetTaskPrioprityButtons(task.Oid)));
                 return false;
             }
